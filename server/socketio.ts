@@ -1,11 +1,11 @@
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { getDatabase } from './db/mongodb';
 import { ObjectId } from 'mongodb';
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
-interface AuthenticatedSocket extends import('socket.io').Socket {
+interface AuthenticatedSocket extends Socket {
   data: {
     userId?: string;
     userType?: string;

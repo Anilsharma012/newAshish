@@ -27,8 +27,8 @@ export default defineConfig(({ command }) => {
     base: "/",
 
     server: {
-      host: true,
-      port: 5173,
+      host: "0.0.0.0",
+      port: 5000,
       strictPort: true,
     },
 
@@ -64,11 +64,26 @@ function expressPlugin(): Plugin {
     name: "express-plugin",
     apply: "serve",
     async configureServer(viteServer) {
-      const srv =
-        (await import(path.resolve(process.cwd(), "server/index.ts")).catch(
-          async () =>
-            await import(path.resolve(process.cwd(), "server/index.js"))
-        )) as any;
+      // Use tsx to load the TypeScript server file
+      const { execSync } = await import('child_process');
+      const tsxPath = path.resolve(process.cwd(), 'node_modules/.bin/tsx');
+      const serverPath = path.resolve(process.cwd(), "server/index.ts");
+      
+      // Try to use tsx to register TypeScript loader
+      let srv;
+      try {
+        // Use vite's loadConfigFromFile or esbuild to transpile on the fly
+        srv = await viteServer.ssrLoadModule(serverPath);
+      } catch (err) {
+        console.error("Failed to load server with SSR:", err);
+        // Fallback to regular import
+        try {
+          srv = await import(serverPath);
+        } catch (e) {
+          console.error("Failed to import server:", e);
+          srv = { createServer: () => (req: any, res: any, next: any) => next(), initializeSocket: () => {} };
+        }
+      }
 
       const createServer =
         srv.createServer ||
