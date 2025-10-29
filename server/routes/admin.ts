@@ -961,6 +961,13 @@ export const approvePremiumProperty: RequestHandler = async (req, res) => {
       updateData.premiumApprovedAt = new Date();
       updateData.premiumApprovedBy = adminId;
       updateData.contactVisible = true; // Show contact info once approved
+      updateData.status = "active"; // Make property visible on frontend
+      updateData.approvalStatus = "approved"; // Also update general approval status
+      updateData.isApproved = true;
+    } else if (action === "reject") {
+      updateData.status = "rejected";
+      updateData.approvalStatus = "rejected";
+      updateData.isApproved = false;
     }
 
     if (adminComments) {
@@ -1391,14 +1398,28 @@ export const updatePropertyApproval: RequestHandler = async (req, res) => {
 
     console.log(`✅ Found property: ${existingProperty.title}`);
 
+    const updateData: any = {
+      approvalStatus,
+      approvedAt: approvalStatus === "approved" ? new Date() : null,
+      updatedAt: new Date(),
+    };
+
+    // When approving, also set status to active so property shows on frontend
+    if (approvalStatus === "approved") {
+      updateData.status = "active";
+      updateData.isApproved = true;
+    } else if (approvalStatus === "rejected") {
+      updateData.status = "rejected";
+      updateData.isApproved = false;
+    } else if (approvalStatus === "pending") {
+      updateData.status = "pending_approval";
+      updateData.isApproved = false;
+    }
+
     const result = await db.collection("properties").updateOne(
       { _id: new ObjectId(propertyId) },
       {
-        $set: {
-          approvalStatus,
-          approvedAt: approvalStatus === "approved" ? new Date() : null,
-          updatedAt: new Date(),
-        },
+        $set: updateData,
       },
     );
 

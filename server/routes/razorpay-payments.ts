@@ -239,6 +239,12 @@ export const verifyRazorpayPayment: RequestHandler = async (req, res) => {
               paymentGateway: "razorpay",
               lastPaymentAt: now,
 
+              // paid amount (for admin dashboard display)
+              paidAmount: Number(tx.amount || 0),
+              paidCurrency: String(tx.currency || "INR"),
+              razorpayPaymentId: razorpay_payment_id,
+              razorpayOrderId: razorpay_order_id,
+
               // package meta (snapshot)
               packageId: new ObjectId(String(tx.packageId)),
               package: {

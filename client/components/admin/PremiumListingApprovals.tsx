@@ -11,6 +11,7 @@ import {
   Calendar,
   User,
   MessageSquare,
+  IndianRupee,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
@@ -63,6 +64,13 @@ interface PremiumProperty {
   premiumApprovedBy?: string;
   createdAt: string;
   packageId?: string;
+  paidAmount?: number;
+  paidCurrency?: string;
+  package?: {
+    name?: string;
+    type?: string;
+    price?: number;
+  };
 }
 
 export default function PremiumListingApprovals() {
@@ -240,6 +248,7 @@ export default function PremiumListingApprovals() {
               <TableRow>
                 <TableHead>Property</TableHead>
                 <TableHead>Price</TableHead>
+                <TableHead>Paid Amount</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Owner Contact</TableHead>
                 <TableHead>Submitted</TableHead>
@@ -268,6 +277,25 @@ export default function PremiumListingApprovals() {
                     </div>
                     <div className="text-sm text-gray-500">
                       For {property.priceType}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <IndianRupee className="h-4 w-4 text-green-600" />
+                      <div>
+                        <div className="font-semibold text-green-600">
+                          {property.paidAmount 
+                            ? `₹${property.paidAmount.toLocaleString()}` 
+                            : property.package?.price 
+                            ? `₹${property.package.price.toLocaleString()}` 
+                            : "N/A"}
+                        </div>
+                        {property.package?.name && (
+                          <div className="text-xs text-gray-500 capitalize">
+                            {property.package.name}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -419,7 +447,7 @@ export default function PremiumListingApprovals() {
               ))}
               {pendingProperties.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-gray-500 py-8">
+                  <TableCell colSpan={7} className="text-center text-gray-500 py-8">
                     No pending premium approvals
                   </TableCell>
                 </TableRow>

@@ -21,8 +21,6 @@ export async function connectToDatabase() {
 
   try {
     console.log("🔄 Connecting to MongoDB Atlas...");
-    console.log("🔗 Connection string:", MONGODB_URI.replace(password, "***"));
-    console.log("👤 Username:", username);
     console.log("🌐 Cluster:", cluster);
     console.log("📊 Target Database:", DB_NAME);
 

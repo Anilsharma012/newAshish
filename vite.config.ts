@@ -1,4 +1,4 @@
-// vite.config.ts (ROOT)
+// vite.config.ts
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -6,16 +6,19 @@ import path from "path";
 const DISABLE_SOURCEMAP =
   String(process.env.DISABLE_SOURCEMAP || "").toLowerCase() === "true";
 
+// Replit gives a dynamic PORT. Locally it'll fall back to 5173.
+const DEV_PORT = Number(process.env.PORT || 5173);
+
 export default defineConfig(({ command }) => {
   const isDev = command === "serve";
 
   return {
+    // frontend lives in /client
     root: "client",
 
-    plugins: [
-      react(),
-      isDev ? expressPlugin() : undefined,
-    ].filter(Boolean) as Plugin[],
+    plugins: [react(), isDev ? expressPlugin() : undefined].filter(
+      Boolean,
+    ) as Plugin[],
 
     resolve: {
       alias: {
@@ -27,12 +30,23 @@ export default defineConfig(({ command }) => {
     base: "/",
 
     server: {
-      host: "0.0.0.0",
-      port: 5000,
-      strictPort: true,
+      host: true, // 0.0.0.0 (required on Replit)
+      port: DEV_PORT,
+      strictPort: false, // allow fallback if taken
+      // Allow Replit preview/tunnel subdomains
+      allowedHosts: [".replit.dev", ".repl.co", "localhost"],
+      hmr: { clientPort: 443 }, // HMR over https
+      cors: true,
     },
 
-    // 👇 Prevent Vite from touching server-only deps in dev
+    // also for `vite preview`
+    preview: {
+      host: true,
+      port: DEV_PORT,
+      allowedHosts: [".replit.dev", ".repl.co", "localhost"],
+    },
+
+    // Prevent Vite from touching server-only deps
     optimizeDeps: {
       exclude: ["razorpay"],
     },
@@ -49,39 +63,35 @@ export default defineConfig(({ command }) => {
           },
         },
       },
-      // Optional: quieten the 500kb warning
       chunkSizeWarningLimit: 1500,
     },
 
-    css: {
-      devSourcemap: true,
-    },
+    css: { devSourcemap: true },
   };
 });
 
+// ---- Dev-only: mount your Express server (server/index.ts) under Vite ----
 function expressPlugin(): Plugin {
   return {
     name: "express-plugin",
     apply: "serve",
     async configureServer(viteServer) {
-      // Use tsx to load the TypeScript server file
-      const { execSync } = await import('child_process');
-      const tsxPath = path.resolve(process.cwd(), 'node_modules/.bin/tsx');
       const serverPath = path.resolve(process.cwd(), "server/index.ts");
-      
-      // Try to use tsx to register TypeScript loader
-      let srv;
+
+      let srv: any;
       try {
-        // Use vite's loadConfigFromFile or esbuild to transpile on the fly
+        // Let Vite transpile TS on the fly
         srv = await viteServer.ssrLoadModule(serverPath);
       } catch (err) {
         console.error("Failed to load server with SSR:", err);
-        // Fallback to regular import
         try {
           srv = await import(serverPath);
         } catch (e) {
           console.error("Failed to import server:", e);
-          srv = { createServer: () => (req: any, res: any, next: any) => next(), initializeSocket: () => {} };
+          srv = {
+            createServer: () => (req: any, res: any, next: any) => next(),
+            initializeSocket: () => {},
+          };
         }
       }
 
@@ -91,7 +101,8 @@ function expressPlugin(): Plugin {
         (() => (req: any, res: any, next: any) => next());
       const initializeSocket = srv.initializeSocket || (() => {});
 
-      const app = typeof createServer === "function" ? createServer() : createServer;
+      const app =
+        typeof createServer === "function" ? createServer() : createServer;
 
       if (viteServer.httpServer) {
         initializeSocket(viteServer.httpServer);
