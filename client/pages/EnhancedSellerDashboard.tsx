@@ -229,7 +229,55 @@ export default function EnhancedSellerDashboard() {
   // Filters for properties
   const [propSearch, setPropSearch] = useState("");
   const [propStatus, setPropStatus] =
-    useState<"all" | "pending" | "approved" | "rejected">("all");
+    useState<"all" | "pending" | "approved" | "rejected">(() => {
+      // Initialize from URL parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get("filter");
+      if (tabParam === "pending" || tabParam === "approved" || tabParam === "rejected") {
+        return tabParam;
+      }
+      return "all";
+    });
+
+  // Handler for clicking KPI cards to filter
+  const handleKPIFilter = (filter: "all" | "pending" | "approved" | "rejected") => {
+    setPropStatus(filter);
+    setActiveTab("properties"); // Switch to properties tab
+    // Update URL
+    const url = new URL(window.location.href);
+    if (filter === "all") {
+      url.searchParams.delete("filter");
+    } else {
+      url.searchParams.set("filter", filter);
+    }
+    window.history.pushState({}, "", url.toString());
+  };
+
+  // Auto-switch to properties tab if URL has filter parameter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const filterParam = urlParams.get("filter");
+    if (filterParam && (filterParam === "pending" || filterParam === "approved" || filterParam === "rejected")) {
+      setActiveTab("properties");
+    }
+  }, []);
+
+  // Sync filter state with URL on browser navigation (Back/Forward)
+  useEffect(() => {
+    const handlePopState = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const filterParam = urlParams.get("filter");
+      if (filterParam === "pending" || filterParam === "approved" || filterParam === "rejected") {
+        setPropStatus(filterParam);
+        setActiveTab("properties");
+      } else {
+        setPropStatus("all");
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   // Profile
   const [profileData, setProfileData] = useState({
@@ -626,7 +674,10 @@ export default function EnhancedSellerDashboard() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleKPIFilter("all")}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Properties</CardTitle>
               <Home className="h-4 w-4 text-muted-foreground" />
@@ -636,7 +687,10 @@ export default function EnhancedSellerDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleKPIFilter("pending")}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pending</CardTitle>
               <Clock className="h-4 w-4 text-yellow-500" />
@@ -646,7 +700,10 @@ export default function EnhancedSellerDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleKPIFilter("approved")}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Approved</CardTitle>
               <CheckCircle className="h-4 w-4 text-green-500" />
