@@ -91,7 +91,7 @@ export default function HomepageBanner({
       onMouseLeave={() => setPaused(false)}
     >
       <div
-        className="relative overflow-hidden rounded-lg shadow-sm cursor-pointer"
+        className="relative overflow-hidden rounded-xl shadow-lg hover:shadow-xl cursor-pointer transition-all duration-300"
         role={current?.link ? "button" : "img"}
         aria-label={current?.title || "Banner"}
         onClick={handleClick}
@@ -109,7 +109,7 @@ export default function HomepageBanner({
                 alt={b.title || "Banner"}
                 loading="lazy"
                 decoding="async"
-                className={`absolute inset-0 w-full h-full object-cover rounded-lg transition-opacity duration-700 ${
+                className={`absolute inset-0 w-full h-full object-cover rounded-xl transition-opacity duration-700 ${
                   active ? "opacity-100" : "opacity-0"
                 }`}
                 onError={(e) => {
@@ -123,7 +123,12 @@ export default function HomepageBanner({
           })}
 
           {/* gradient overlay */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/40 to-transparent rounded-lg" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/40 to-transparent rounded-xl" />
+        </div>
+
+        {/* 'Ad' tag indicator */}
+        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-md font-medium">
+          Ad
         </div>
 
         {/* Title + CTA chevron */}
