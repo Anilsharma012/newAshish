@@ -67,6 +67,7 @@ const menuItems: MenuItem[] = [
     icon: Megaphone,
     children: [
       { id: "ads-listing", label: "Ads Listing", icon: List },
+      { id: "deleted-ads", label: "Deleted Ads", icon: Trash2 },
       { id: "categories", label: "Categories", icon: Layers },
       { id: "custom-fields", label: "Custom Fields", icon: Settings },
       {

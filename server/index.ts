@@ -149,6 +149,11 @@ import {
   bulkDeleteProperties,
   bulkUpdatePropertiesStatus,
   bulkUpdatePropertiesApproval,
+  getDeletedProperties,
+  restoreProperty,
+  restoreProperties,
+  permanentDeleteProperty,
+  permanentDeleteProperties,
 } from "./routes/admin";
 
 // Chat routes
@@ -1186,6 +1191,36 @@ app.use("/api/payments/razorpay", requireBuyer, razorpayRoutes);
     authenticateToken,
     requireAdmin,
     bulkUpdatePropertiesApproval,
+  );
+  app.get(
+    "/api/admin/properties/deleted",
+    authenticateToken,
+    requireAdmin,
+    getDeletedProperties,
+  );
+  app.put(
+    "/api/admin/properties/:propertyId/restore",
+    authenticateToken,
+    requireAdmin,
+    restoreProperty,
+  );
+  app.put(
+    "/api/admin/properties/bulk/restore",
+    authenticateToken,
+    requireAdmin,
+    restoreProperties,
+  );
+  app.delete(
+    "/api/admin/properties/:propertyId/permanent",
+    authenticateToken,
+    requireAdmin,
+    permanentDeleteProperty,
+  );
+  app.delete(
+    "/api/admin/properties/bulk/permanent",
+    authenticateToken,
+    requireAdmin,
+    permanentDeleteProperties,
   );
   app.get(
     "/api/admin/premium-properties",

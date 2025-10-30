@@ -406,6 +406,9 @@ export const getAllProperties: RequestHandler = async (req, res) => {
 
     // Build filter
     const filter: any = {};
+    // Exclude deleted properties by default
+    filter.isDeleted = { $ne: true };
+    
     if (status && status !== "all") {
       filter.status = status;
     }
@@ -1000,17 +1003,27 @@ export const approvePremiumProperty: RequestHandler = async (req, res) => {
   }
 };
 
-// Delete property (admin only)
+// Delete property (admin only) - Soft delete
 export const deleteProperty: RequestHandler = async (req, res) => {
   try {
     const db = getDatabase();
     const { propertyId } = req.params;
+    const adminId = (req as any).user?.userId;
 
     const result = await db
       .collection("properties")
-      .deleteOne({ _id: new ObjectId(propertyId) });
+      .updateOne(
+        { _id: new ObjectId(propertyId) },
+        { 
+          $set: { 
+            isDeleted: true, 
+            deletedAt: new Date(),
+            deletedBy: adminId 
+          } 
+        }
+      );
 
-    if (result.deletedCount === 0) {
+    if (result.matchedCount === 0) {
       return res.status(404).json({
         success: false,
         error: "Property not found",
@@ -1032,8 +1045,118 @@ export const deleteProperty: RequestHandler = async (req, res) => {
   }
 };
 
-// Bulk delete properties (admin only)
+// Bulk delete properties (admin only) - Soft delete
 export const bulkDeleteProperties: RequestHandler = async (req, res) => {
+  try {
+    const db = getDatabase();
+    const { propertyIds } = req.body;
+    const adminId = (req as any).user?.userId;
+
+    if (!propertyIds || !Array.isArray(propertyIds) || propertyIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Property IDs array is required",
+      });
+    }
+
+    const objectIds = propertyIds.map(id => new ObjectId(id));
+    const result = await db
+      .collection("properties")
+      .updateMany(
+        { _id: { $in: objectIds } },
+        { 
+          $set: { 
+            isDeleted: true, 
+            deletedAt: new Date(),
+            deletedBy: adminId 
+          } 
+        }
+      );
+
+    const response: ApiResponse<{ message: string; deletedCount: number }> = {
+      success: true,
+      data: { 
+        message: `${result.modifiedCount} properties deleted successfully`,
+        deletedCount: result.modifiedCount 
+      },
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error("Error bulk deleting properties:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to bulk delete properties",
+    });
+  }
+};
+
+// Get deleted properties (admin only)
+export const getDeletedProperties: RequestHandler = async (req, res) => {
+  try {
+    const db = getDatabase();
+    
+    const deletedProperties = await db
+      .collection("properties")
+      .find({ isDeleted: true })
+      .sort({ deletedAt: -1 })
+      .toArray();
+
+    const response: ApiResponse<Property[]> = {
+      success: true,
+      data: deletedProperties as Property[],
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error("Error fetching deleted properties:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch deleted properties",
+    });
+  }
+};
+
+// Restore deleted property (admin only)
+export const restoreProperty: RequestHandler = async (req, res) => {
+  try {
+    const db = getDatabase();
+    const { propertyId } = req.params;
+
+    const result = await db
+      .collection("properties")
+      .updateOne(
+        { _id: new ObjectId(propertyId), isDeleted: true },
+        { 
+          $unset: { isDeleted: "", deletedAt: "", deletedBy: "" },
+          $set: { updatedAt: new Date() }
+        }
+      );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Deleted property not found",
+      });
+    }
+
+    const response: ApiResponse<{ message: string }> = {
+      success: true,
+      data: { message: "Property restored successfully" },
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error("Error restoring property:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to restore property",
+    });
+  }
+};
+
+// Bulk restore properties (admin only)
+export const restoreProperties: RequestHandler = async (req, res) => {
   try {
     const db = getDatabase();
     const { propertyIds } = req.body;
@@ -1048,22 +1171,96 @@ export const bulkDeleteProperties: RequestHandler = async (req, res) => {
     const objectIds = propertyIds.map(id => new ObjectId(id));
     const result = await db
       .collection("properties")
-      .deleteMany({ _id: { $in: objectIds } });
+      .updateMany(
+        { _id: { $in: objectIds }, isDeleted: true },
+        { 
+          $unset: { isDeleted: "", deletedAt: "", deletedBy: "" },
+          $set: { updatedAt: new Date() }
+        }
+      );
+
+    const response: ApiResponse<{ message: string; restoredCount: number }> = {
+      success: true,
+      data: { 
+        message: `${result.modifiedCount} properties restored successfully`,
+        restoredCount: result.modifiedCount 
+      },
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error("Error bulk restoring properties:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to bulk restore properties",
+    });
+  }
+};
+
+// Permanently delete property (admin only)
+export const permanentDeleteProperty: RequestHandler = async (req, res) => {
+  try {
+    const db = getDatabase();
+    const { propertyId } = req.params;
+
+    const result = await db
+      .collection("properties")
+      .deleteOne({ _id: new ObjectId(propertyId), isDeleted: true });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Deleted property not found",
+      });
+    }
+
+    const response: ApiResponse<{ message: string }> = {
+      success: true,
+      data: { message: "Property permanently deleted" },
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error("Error permanently deleting property:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to permanently delete property",
+    });
+  }
+};
+
+// Bulk permanently delete properties (admin only)
+export const permanentDeleteProperties: RequestHandler = async (req, res) => {
+  try {
+    const db = getDatabase();
+    const { propertyIds } = req.body;
+
+    if (!propertyIds || !Array.isArray(propertyIds) || propertyIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Property IDs array is required",
+      });
+    }
+
+    const objectIds = propertyIds.map(id => new ObjectId(id));
+    const result = await db
+      .collection("properties")
+      .deleteMany({ _id: { $in: objectIds }, isDeleted: true });
 
     const response: ApiResponse<{ message: string; deletedCount: number }> = {
       success: true,
       data: { 
-        message: `${result.deletedCount} properties deleted successfully`,
+        message: `${result.deletedCount} properties permanently deleted`,
         deletedCount: result.deletedCount 
       },
     };
 
     res.json(response);
   } catch (error) {
-    console.error("Error bulk deleting properties:", error);
+    console.error("Error bulk permanently deleting properties:", error);
     res.status(500).json({
       success: false,
-      error: "Failed to bulk delete properties",
+      error: "Failed to bulk permanently delete properties",
     });
   }
 };

@@ -54,6 +54,9 @@ export interface Property {
   packageExpiry?: Date;
   views: number;
   inquiries: number;
+  isDeleted?: boolean;
+  deletedAt?: Date;
+  deletedBy?: string; // admin user ID who deleted
   createdAt: Date;
   updatedAt: Date;
 }

@@ -35,6 +35,7 @@ import UserManagement from "../components/admin/UserManagement";
 import AllUsersManagement from "../components/AllUsersManagement";
 import PropertyManagement from "../components/admin/PropertyManagement";
 import CompletePropertyManagement from "../components/admin/CompletePropertyManagement";
+import DeletedPropertiesManagement from "../components/admin/DeletedPropertiesManagement";
 import CustomFieldsManagement from "../components/admin/CustomFieldsManagement";
 import CategoryManagement from "../components/admin/CategoryManagement";
 import EnhancedCategoryManagement from "../components/admin/EnhancedCategoryManagement";
@@ -1105,6 +1106,8 @@ export default function Admin() {
           return <UserAnalytics />;
         case "ads-listing":
           return <CompletePropertyManagement />;
+        case "deleted-ads":
+          return <DeletedPropertiesManagement />;
         case "seller-verification":
           return <SellerVerificationManagement />;
         case "user-reports":
