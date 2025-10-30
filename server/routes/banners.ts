@@ -173,20 +173,24 @@ export const getActiveBanners: RequestHandler = async (req, res) => {
       return res.json({ success: true, data: [] });
     }
 
-    const { active, position, search = "" } = req.query as {
+    const { active, position, search = "", status, isFeatured } = req.query as {
       active?: string;
       position?: string;
       search?: string;
+      status?: string;
+      isFeatured?: string;
     };
 
     const filter: any = { ...buildSearchFilter(search) };
     if (active !== undefined) filter.isActive = toBool(active);
     if (position) filter.position = String(position);
+    if (status) filter.status = String(status);
+    if (isFeatured !== undefined) filter.isFeatured = toBool(isFeatured);
 
     const raw = await db
       .collection("banners")
       .find(filter)
-      .sort({ sortOrder: 1, createdAt: -1 })
+      .sort({ createdAt: -1, sortOrder: 1 })
       .toArray();
 
     const banners = raw.map(mapBannerOut);
@@ -213,12 +217,16 @@ export const getAllBanners: RequestHandler = async (req, res) => {
       limit = "10",
       position,
       active,
+      status,
+      isFeatured,
     } = req.query as {
       search?: string;
       page?: string;
       limit?: string;
       position?: string;
       active?: string;
+      status?: string;
+      isFeatured?: string;
     };
 
     const pageNum = Math.max(parseInt(page as string) || 1, 1);
@@ -228,13 +236,15 @@ export const getAllBanners: RequestHandler = async (req, res) => {
     const filter: any = { ...buildSearchFilter(search) };
     if (position) filter.position = String(position);
     if (active !== undefined) filter.isActive = toBool(active);
+    if (status) filter.status = String(status);
+    if (isFeatured !== undefined) filter.isFeatured = toBool(isFeatured);
 
     const collection = db.collection("banners");
 
     const [raw, total] = await Promise.all([
       collection
         .find(filter)
-        .sort({ sortOrder: 1, createdAt: -1 })
+        .sort({ createdAt: -1, sortOrder: 1 })
         .skip(skip)
         .limit(limitNum)
         .toArray(),
@@ -273,8 +283,8 @@ export const getAllBanners: RequestHandler = async (req, res) => {
 export const createBanner: RequestHandler = async (req, res) => {
   try {
     const db = getDatabase();
-    const { title, imageUrl, link = "", isActive = true, sortOrder, position } =
-      req.body as Partial<BannerAd> & { position?: string };
+    const { title, imageUrl, link = "", isActive = true, sortOrder, position, status = "approved", isFeatured = false } =
+      req.body as Partial<BannerAd> & { position?: string; status?: string; isFeatured?: boolean };
 
     if (!title || !imageUrl) {
       return res.status(400).json({
@@ -283,12 +293,14 @@ export const createBanner: RequestHandler = async (req, res) => {
       });
     }
 
-    const bannerData: Omit<BannerAd, "_id"> & { createdAt: Date; position?: string } = {
+    const bannerData: Omit<BannerAd, "_id"> & { createdAt: Date; position?: string; status?: string; isFeatured?: boolean } = {
       title: String(title).trim(),
       imageUrl: String(imageUrl).trim(),
       link: String(link || "").trim(),
       isActive: Boolean(isActive),
       sortOrder: typeof sortOrder === "number" ? sortOrder : 999,
+      status: String(status || "approved"),
+      isFeatured: Boolean(isFeatured),
       createdAt: new Date(),
       ...(position ? { position: String(position) } : {}),
     };
@@ -322,8 +334,8 @@ export const updateBanner: RequestHandler = async (req, res) => {
       return res.status(400).json({ success: false, error: "Invalid banner ID" });
     }
 
-    const { title, imageUrl, link, isActive, sortOrder, position } =
-      req.body as Partial<BannerAd> & { position?: string };
+    const { title, imageUrl, link, isActive, sortOrder, position, status, isFeatured } =
+      req.body as Partial<BannerAd> & { position?: string; status?: string; isFeatured?: boolean };
 
     const updateData: any = {};
     if (title !== undefined) updateData.title = String(title).trim();
@@ -332,6 +344,8 @@ export const updateBanner: RequestHandler = async (req, res) => {
     if (isActive !== undefined) updateData.isActive = Boolean(isActive);
     if (sortOrder !== undefined) updateData.sortOrder = Number(sortOrder);
     if (position !== undefined) updateData.position = String(position);
+    if (status !== undefined) updateData.status = String(status);
+    if (isFeatured !== undefined) updateData.isFeatured = Boolean(isFeatured);
 
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json({ success: false, error: "No fields to update" });

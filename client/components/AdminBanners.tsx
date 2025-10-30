@@ -76,6 +76,8 @@ export default function AdminBanners({ token }: AdminBannersProps) {
     isActive: boolean;
     sortOrder: number;
     position: string;
+    status: string;
+    isFeatured: boolean;
   }>({
     title: "",
     imageUrl: "",
@@ -83,6 +85,8 @@ export default function AdminBanners({ token }: AdminBannersProps) {
     isActive: true,
     sortOrder: 1,
     position: "homepage_top",
+    status: "approved",
+    isFeatured: false,
   });
 
   useEffect(() => {
@@ -203,15 +207,23 @@ export default function AdminBanners({ token }: AdminBannersProps) {
         isActive: formData.isActive,
         sortOrder: Number(formData.sortOrder) || 1,
         position: formData.position,
+        status: formData.status || "approved",
+        isFeatured: formData.isFeatured || false,
       };
 
-      // Optimistic UI (editing)
+      // Optimistic UI (editing) - preserve all fields including status/isFeatured
       let prevSnapshot: AdminBanner | null = null;
       if (isEditing) {
         prevSnapshot = { ...(editingBanner as AdminBanner) };
+        const optimisticBanner = { 
+          ...(editingBanner as AdminBanner), 
+          ...payload,
+          status: payload.status,
+          isFeatured: payload.isFeatured,
+        };
         setBanners((prev) =>
           prev.map((b) =>
-            b._id === editingBanner!._id ? ({ ...b, ...payload } as AdminBanner) : b,
+            b._id === editingBanner!._id ? (optimisticBanner as AdminBanner) : b,
           ),
         );
       }
@@ -347,6 +359,8 @@ export default function AdminBanners({ token }: AdminBannersProps) {
       isActive: Boolean(banner.isActive),
       sortOrder: banner.sortOrder || 1,
       position: banner.position || "homepage_top",
+      status: (banner as any).status || "approved",
+      isFeatured: Boolean((banner as any).isFeatured),
     });
     setEditingBanner(banner);
     setShowDialog(true);
@@ -360,6 +374,8 @@ export default function AdminBanners({ token }: AdminBannersProps) {
       isActive: true,
       sortOrder: 1,
       position: "homepage_top",
+      status: "approved",
+      isFeatured: false,
     });
     setEditingBanner(null);
   };
@@ -502,6 +518,33 @@ export default function AdminBanners({ token }: AdminBannersProps) {
                 <p className="text-xs text-gray-500 mt-1">
                   Lower numbers appear first
                 </p>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Status
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => handleInputChange("status", e.target.value)}
+                  className="w-full border rounded-md p-2 text-sm"
+                >
+                  <option value="approved">Approved</option>
+                  <option value="pending">Pending</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+
+              {/* Featured */}
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={formData.isFeatured}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("isFeatured", checked)
+                  }
+                />
+                <label className="text-sm font-medium">Featured (show on homepage)</label>
               </div>
 
               {/* Active */}

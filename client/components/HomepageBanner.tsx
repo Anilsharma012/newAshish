@@ -25,15 +25,18 @@ export default function HomepageBanner({
       try {
         setLoading(true);
         const apiRes = await (window as any).api(
-          `/banners?active=true&position=${encodeURIComponent(position)}`,
+          `/banners?active=true&position=${encodeURIComponent(position)}&status=approved&isFeatured=true`,
           { timeout: 8000 }
         );
 
         if (apiRes?.ok && apiRes.json?.success && Array.isArray(apiRes.json.data)) {
           // only this position; keep items that have an image
+          // filter for approved & featured (server-side filtered, but double-check client-side)
           const list = (apiRes.json.data as BannerAd[])
             .filter((b: any) => (b as any).position === position)
-            .filter((b: any) => (b as any).imageUrl || (b as any).image);
+            .filter((b: any) => (b as any).imageUrl || (b as any).image)
+            .filter((b: any) => (b as any).status === "approved" || !(b as any).status)
+            .filter((b: any) => (b as any).isFeatured === true || (b as any).isFeatured === undefined);
 
           if (mounted) {
             setBanners(list);
