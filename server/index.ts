@@ -146,6 +146,9 @@ import {
   updatePropertyApproval,
   createTestProperty,
   debugProperties,
+  bulkDeleteProperties,
+  bulkUpdatePropertiesStatus,
+  bulkUpdatePropertiesApproval,
 } from "./routes/admin";
 
 // Chat routes
@@ -1165,6 +1168,24 @@ app.use("/api/payments/razorpay", requireBuyer, razorpayRoutes);
     authenticateToken,
     requireAdmin,
     deleteProperty,
+  );
+  app.delete(
+    "/api/admin/properties/bulk",
+    authenticateToken,
+    requireAdmin,
+    bulkDeleteProperties,
+  );
+  app.put(
+    "/api/admin/properties/bulk/status",
+    authenticateToken,
+    requireAdmin,
+    bulkUpdatePropertiesStatus,
+  );
+  app.put(
+    "/api/admin/properties/bulk/approval",
+    authenticateToken,
+    requireAdmin,
+    bulkUpdatePropertiesApproval,
   );
   app.get(
     "/api/admin/premium-properties",

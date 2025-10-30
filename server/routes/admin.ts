@@ -1032,6 +1032,134 @@ export const deleteProperty: RequestHandler = async (req, res) => {
   }
 };
 
+// Bulk delete properties (admin only)
+export const bulkDeleteProperties: RequestHandler = async (req, res) => {
+  try {
+    const db = getDatabase();
+    const { propertyIds } = req.body;
+
+    if (!propertyIds || !Array.isArray(propertyIds) || propertyIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Property IDs array is required",
+      });
+    }
+
+    const objectIds = propertyIds.map(id => new ObjectId(id));
+    const result = await db
+      .collection("properties")
+      .deleteMany({ _id: { $in: objectIds } });
+
+    const response: ApiResponse<{ message: string; deletedCount: number }> = {
+      success: true,
+      data: { 
+        message: `${result.deletedCount} properties deleted successfully`,
+        deletedCount: result.deletedCount 
+      },
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error("Error bulk deleting properties:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to bulk delete properties",
+    });
+  }
+};
+
+// Bulk update properties status (admin only)
+export const bulkUpdatePropertiesStatus: RequestHandler = async (req, res) => {
+  try {
+    const db = getDatabase();
+    const { propertyIds, status } = req.body;
+
+    if (!propertyIds || !Array.isArray(propertyIds) || propertyIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Property IDs array is required",
+      });
+    }
+
+    if (!status || !['active', 'inactive', 'sold', 'rented'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        error: "Valid status is required (active, inactive, sold, rented)",
+      });
+    }
+
+    const objectIds = propertyIds.map(id => new ObjectId(id));
+    const result = await db
+      .collection("properties")
+      .updateMany(
+        { _id: { $in: objectIds } },
+        { $set: { status, updatedAt: new Date() } }
+      );
+
+    const response: ApiResponse<{ message: string; updatedCount: number }> = {
+      success: true,
+      data: { 
+        message: `${result.modifiedCount} properties updated successfully`,
+        updatedCount: result.modifiedCount 
+      },
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error("Error bulk updating properties status:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to bulk update properties status",
+    });
+  }
+};
+
+// Bulk update properties approval status (admin only)
+export const bulkUpdatePropertiesApproval: RequestHandler = async (req, res) => {
+  try {
+    const db = getDatabase();
+    const { propertyIds, approvalStatus } = req.body;
+
+    if (!propertyIds || !Array.isArray(propertyIds) || propertyIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Property IDs array is required",
+      });
+    }
+
+    if (!approvalStatus || !['pending', 'approved', 'rejected'].includes(approvalStatus)) {
+      return res.status(400).json({
+        success: false,
+        error: "Valid approval status is required (pending, approved, rejected)",
+      });
+    }
+
+    const objectIds = propertyIds.map(id => new ObjectId(id));
+    const result = await db
+      .collection("properties")
+      .updateMany(
+        { _id: { $in: objectIds } },
+        { $set: { approvalStatus, updatedAt: new Date() } }
+      );
+
+    const response: ApiResponse<{ message: string; updatedCount: number }> = {
+      success: true,
+      data: { 
+        message: `${result.modifiedCount} properties approval updated successfully`,
+        updatedCount: result.modifiedCount 
+      },
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error("Error bulk updating properties approval:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to bulk update properties approval",
+    });
+  }
+};
+
 // Upload category icon
 export const uploadCategoryIcon: RequestHandler = async (req, res) => {
   try {

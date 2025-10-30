@@ -27,6 +27,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Badge } from "../ui/badge";
 import { Switch } from "../ui/switch";
+import { Checkbox } from "../ui/checkbox";
 import {
   Table,
   TableBody,
@@ -114,6 +115,10 @@ function CompletePropertyManagement() {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [saving, setSaving] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  
+  const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [bulkActionType, setBulkActionType] = useState<string>("");
   
   const [formData, setFormData] = useState({
     title: "",
@@ -328,6 +333,92 @@ function CompletePropertyManagement() {
     } catch (error: any) {
       console.error("Error deleting property:", error);
       setError(error.message || "Failed to delete property");
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedProperties(properties.map(p => p._id));
+    } else {
+      setSelectedProperties([]);
+    }
+  };
+
+  const handleSelectProperty = (propertyId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedProperties([...selectedProperties, propertyId]);
+    } else {
+      setSelectedProperties(selectedProperties.filter(id => id !== propertyId));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!token || selectedProperties.length === 0) return;
+    
+    const confirmMsg = `Are you sure you want to delete ${selectedProperties.length} properties? This action cannot be undone.`;
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      setSaving(true);
+      const { api } = await import('../../lib/api');
+      await api.delete('admin/properties/bulk', token, {
+        propertyIds: selectedProperties
+      });
+      
+      setProperties(properties.filter(p => !selectedProperties.includes(p._id)));
+      setSelectedProperties([]);
+      setShowBulkActions(false);
+    } catch (error: any) {
+      console.error("Error bulk deleting properties:", error);
+      setError(error.message || "Failed to delete properties");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleBulkUpdateStatus = async (status: string) => {
+    if (!token || selectedProperties.length === 0) return;
+
+    try {
+      setSaving(true);
+      const { api } = await import('../../lib/api');
+      await api.put('admin/properties/bulk/status', {
+        propertyIds: selectedProperties,
+        status
+      }, token);
+      
+      fetchProperties();
+      setSelectedProperties([]);
+      setShowBulkActions(false);
+      setBulkActionType("");
+    } catch (error: any) {
+      console.error("Error bulk updating status:", error);
+      setError(error.message || "Failed to update properties");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleBulkUpdateApproval = async (approvalStatus: string) => {
+    if (!token || selectedProperties.length === 0) return;
+
+    try {
+      setSaving(true);
+      const { api } = await import('../../lib/api');
+      await api.put('admin/properties/bulk/approval', {
+        propertyIds: selectedProperties,
+        approvalStatus
+      }, token);
+      
+      fetchProperties();
+      setSelectedProperties([]);
+      setShowBulkActions(false);
+      setBulkActionType("");
+    } catch (error: any) {
+      console.error("Error bulk updating approval:", error);
+      setError(error.message || "Failed to update properties");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -704,12 +795,83 @@ function CompletePropertyManagement() {
         </Button>
       </div>
 
+      {/* Bulk Actions Toolbar */}
+      {selectedProperties.length > 0 && (
+        <Card className="mb-4 bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <span className="font-medium text-blue-900">
+                  {selectedProperties.length} {selectedProperties.length === 1 ? 'property' : 'properties'} selected
+                </span>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  disabled={saving}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Selected
+                </Button>
+                <Select value={bulkActionType} onValueChange={setBulkActionType}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Bulk Update..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="status">Update Status</SelectItem>
+                    <SelectItem value="approval">Update Approval</SelectItem>
+                  </SelectContent>
+                </Select>
+                {bulkActionType === "status" && (
+                  <Select onValueChange={handleBulkUpdateStatus}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="sold">Sold</SelectItem>
+                      <SelectItem value="rented">Rented</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+                {bulkActionType === "approval" && (
+                  <Select onValueChange={handleBulkUpdateApproval}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Select Approval" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedProperties([])}
+              >
+                Clear Selection
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Properties Table */}
       <Card>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={selectedProperties.length === properties.length && properties.length > 0}
+                    onCheckedChange={handleSelectAll}
+                  />
+                </TableHead>
                 <TableHead>Property</TableHead>
                 <TableHead>Owner</TableHead>
                 <TableHead>Status</TableHead>
@@ -727,6 +889,12 @@ function CompletePropertyManagement() {
                 });
                 return (
                 <TableRow key={property._id || property.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedProperties.includes(property._id)}
+                      onCheckedChange={(checked) => handleSelectProperty(property._id, checked as boolean)}
+                    />
+                  </TableCell>
                   <TableCell className="font-medium">
                     <div className="flex items-start space-x-3">
                       {property.images && property.images.length > 0 && (
