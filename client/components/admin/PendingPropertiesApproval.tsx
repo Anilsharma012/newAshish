@@ -20,6 +20,25 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { Alert, AlertDescription } from "../ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+
+const REJECTION_REGIONS = [
+  { value: "images", label: "Property Images" },
+  { value: "description", label: "Description" },
+  { value: "location", label: "Location/Address" },
+  { value: "price", label: "Price Information" },
+  { value: "contact", label: "Contact Details" },
+  { value: "specifications", label: "Property Specifications" },
+  { value: "amenities", label: "Amenities" },
+  { value: "documents", label: "Documents/Verification" },
+  { value: "other", label: "Other" },
+];
 
 const PendingPropertiesApproval = () => {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -29,6 +48,7 @@ const PendingPropertiesApproval = () => {
     null,
   );
   const [adminComments, setAdminComments] = useState("");
+  const [rejectionRegion, setRejectionRegion] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
@@ -72,8 +92,14 @@ const PendingPropertiesApproval = () => {
         adminComments: adminComments.trim() || undefined,
       };
 
-      if (approvalStatus === "rejected" && rejectionReason.trim()) {
-        payload.rejectionReason = rejectionReason.trim();
+      if (approvalStatus === "rejected") {
+        if (!rejectionRegion || !rejectionReason.trim()) {
+          setError("Please select a problem region and provide a specific reason for rejection");
+          return;
+        }
+        const regionLabel = REJECTION_REGIONS.find(r => r.value === rejectionRegion)?.label || "General";
+        payload.rejectionReason = `${regionLabel}: ${rejectionReason.trim()}`;
+        payload.rejectionRegion = rejectionRegion;
       }
 
       const token = localStorage.getItem("token");
@@ -111,6 +137,7 @@ const PendingPropertiesApproval = () => {
   const openPropertyDetails = (property: Property) => {
     setSelectedProperty(property);
     setAdminComments("");
+    setRejectionRegion("");
     setRejectionReason("");
     setError("");
     setSuccess("");
@@ -394,15 +421,36 @@ const PendingPropertiesApproval = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Rejection Reason (Required for rejection)
-                  </label>
-                  <Input
-                    value={rejectionReason}
-                    onChange={(e) => setRejectionReason(e.target.value)}
-                    placeholder="Specify reason for rejection..."
-                  />
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Problem Region/Section
+                    </label>
+                    <Select value={rejectionRegion} onValueChange={setRejectionRegion}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select the section with issues..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {REJECTION_REGIONS.map((region) => (
+                          <SelectItem key={region.value} value={region.value}>
+                            {region.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Specific Rejection Reason
+                    </label>
+                    <Textarea
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                      placeholder="Provide specific details about what needs to be fixed..."
+                      rows={3}
+                    />
+                  </div>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4">
@@ -418,6 +466,7 @@ const PendingPropertiesApproval = () => {
                     }
                     disabled={
                       processing === selectedProperty._id ||
+                      !rejectionRegion ||
                       !rejectionReason.trim()
                     }
                     variant="destructive"

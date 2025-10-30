@@ -690,7 +690,7 @@ const handleStartChat = async () => {
               <Card>
                 <CardContent className="p-0">
                   <div 
-                    className="relative aspect-video"
+                    className="relative aspect-video overflow-hidden"
                     onTouchStart={onTouchStart}
                     onTouchMove={onTouchMove}
                     onTouchEnd={onTouchEnd}

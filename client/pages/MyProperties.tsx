@@ -241,6 +241,38 @@ export default function MyProperties() {
     }
   };
 
+  const resubmitProperty = async (propertyId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please login to resubmit your property");
+        return;
+      }
+
+      const confirmed = confirm(
+        "Are you sure you want to resubmit this property for review? Make sure you have addressed all the issues mentioned in the rejection reason."
+      );
+      
+      if (!confirmed) return;
+
+      const response = await api.post(
+        `/seller/properties/${propertyId}/resubmit`,
+        {},
+        token,
+      );
+      
+      if (response.data.success) {
+        alert("Property resubmitted successfully! It will be reviewed by our team.");
+        fetchProperties();
+      } else {
+        alert(response.data.error || "Failed to resubmit property");
+      }
+    } catch (error: any) {
+      console.error("Error resubmitting property:", error);
+      alert(error.message || "Network error occurred while resubmitting property");
+    }
+  };
+
   const getFilteredProperties = () => {
     let filtered = properties;
 
@@ -645,6 +677,16 @@ export default function MyProperties() {
                                   Edit Property
                                 </Link>
                               </DropdownMenuItem>
+                              
+                              {property.approvalStatus === "rejected" && (
+                                <DropdownMenuItem
+                                  onClick={() => resubmitProperty(property._id)}
+                                  className="text-blue-600"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  Resubmit for Review
+                                </DropdownMenuItem>
+                              )}
 
                               <DropdownMenuItem
                                 onClick={() => {

@@ -56,6 +56,8 @@ export default function Watermark({
         backgroundImage: `url("data:image/svg+xml,${svg}")`,
         backgroundRepeat: "repeat",
         backgroundSize: `${tileW}px ${tileH}px`,
+        backgroundPosition: "center",
+        backgroundAttachment: "local",
         mixBlendMode: "multiply",
       }}
     />

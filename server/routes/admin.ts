@@ -1729,10 +1729,31 @@ export const updatePropertyApproval: RequestHandler = async (req, res) => {
       updatedAt: new Date(),
     };
 
+    // Add admin comments and rejection reason if provided
+    if (req.body.adminComments) {
+      updateData.adminComments = req.body.adminComments;
+    }
+    
+    if (approvalStatus === "rejected") {
+      if (!req.body.rejectionReason || !req.body.rejectionReason.trim()) {
+        return res.status(400).json({
+          success: false,
+          error: "Rejection reason is required when rejecting a property",
+        });
+      }
+      updateData.rejectionReason = req.body.rejectionReason.trim();
+      updateData.rejectionRegion = req.body.rejectionRegion || "general";
+      updateData.rejectedAt = new Date();
+    }
+
     // When approving, also set status to active so property shows on frontend
     if (approvalStatus === "approved") {
       updateData.status = "active";
       updateData.isApproved = true;
+      // Clear any previous rejection data
+      updateData.rejectionReason = null;
+      updateData.rejectionRegion = null;
+      updateData.rejectedAt = null;
     } else if (approvalStatus === "rejected") {
       updateData.status = "rejected";
       updateData.isApproved = false;
