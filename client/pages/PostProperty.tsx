@@ -22,6 +22,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { ROHTAK_AREAS } from "@shared/types";
+import { getRohtakLandmarks } from "../data/rohtakLocations";
 
 // ------------------------------
 // Toggle (keep free listing ON as you asked)
@@ -1064,13 +1065,23 @@ export default function PostProperty() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nearby Landmark
                 </label>
-                <Input
+                <Select
                   value={formData.location.landmark}
-                  onChange={(e) =>
-                    handleInputChange("location.landmark", e.target.value)
+                  onValueChange={(value) =>
+                    handleInputChange("location.landmark", value)
                   }
-                  placeholder="e.g., Near PGI Rohtak, AIIMS Rohtak"
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select nearby landmark" />
+                  </SelectTrigger>
+                  <SelectContent className="z-[10050] max-h-[60vh] overscroll-contain z-raise">
+                    {getRohtakLandmarks().map((landmark) => (
+                      <SelectItem key={landmark} value={landmark}>
+                        {landmark}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}

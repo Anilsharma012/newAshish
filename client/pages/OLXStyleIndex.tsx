@@ -2,6 +2,7 @@ import OLXStyleHeader from "../components/OLXStyleHeader";
 import CategoryBar from "../components/CategoryBar";
 import OLXStyleListings from "../components/OLXStyleListings";
 import PWAInstallPrompt from "../components/PWAInstallPrompt";
+import PWAInstallButton from "../components/PWAInstallButton";
 import BottomNavigation from "../components/BottomNavigation";
 
 export default function OLXStyleIndex() {
@@ -16,6 +17,7 @@ export default function OLXStyleIndex() {
 
       <BottomNavigation />
       <PWAInstallPrompt />
+      <PWAInstallButton />
     </div>
   );
 }

@@ -533,7 +533,10 @@ const UserDashboard = () => {
 
         {/* Quick Actions */}
         <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Card 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => navigate('/my-account')}
+          >
             <CardContent className="p-6 text-center">
               <User className="h-8 w-8 text-[#C70000] mx-auto mb-2" />
               <h3 className="font-semibold mb-1">Profile</h3>
@@ -541,7 +544,10 @@ const UserDashboard = () => {
             </CardContent>
           </Card>
           
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Card 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => navigate('/favorites')}
+          >
             <CardContent className="p-6 text-center">
               <Heart className="h-8 w-8 text-[#C70000] mx-auto mb-2" />
               <h3 className="font-semibold mb-1">Favorites</h3>
@@ -549,7 +555,10 @@ const UserDashboard = () => {
             </CardContent>
           </Card>
           
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Card 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => navigate('/messages')}
+          >
             <CardContent className="p-6 text-center">
               <MessageSquare className="h-8 w-8 text-[#C70000] mx-auto mb-2" />
               <h3 className="font-semibold mb-1">Messages</h3>
@@ -557,7 +566,10 @@ const UserDashboard = () => {
             </CardContent>
           </Card>
           
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Card 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => navigate('/settings')}
+          >
             <CardContent className="p-6 text-center">
               <Settings className="h-8 w-8 text-[#C70000] mx-auto mb-2" />
               <h3 className="font-semibold mb-1">Settings</h3>
